@@ -20,9 +20,10 @@
 //! ```
 //! extern crate futures;
 //! extern crate completable_future;
+//! extern crate tokio;
 //! 
 //! use futures::prelude::*;
-//! use futures::executor::block_on;
+//! use tokio::executor::current_thread::block_on_all;
 //! use std::thread::spawn;
 //! use std::thread::sleep;
 //! use std::time::Duration;
@@ -40,7 +41,7 @@
 //!     
 //!     let j = spawn(move || {
 //!         println!("waiter thread: I'm going to block on fut2");
-//!         let ret = block_on(fut2).unwrap();
+//!         let ret = block_on_all(fut2).unwrap();
 //!         println!("waiter thread: fut2 completed with message -- {}", ret);
 //!     });
 //!     
@@ -59,30 +60,28 @@ extern crate futures;
  
 use futures::future::Future;
 use futures::Async;
-use futures::task::{Context, Waker, AtomicWaker};
+use futures::task::AtomicTask;
 use std::sync::{Arc, Mutex};
 use std::mem;
 
 enum WakerWrapper {
-    Registered(AtomicWaker),
+    Registered(AtomicTask),
     NotRegistered,
 }
 
 impl WakerWrapper {
-    fn register(&mut self, waker: &Waker) {
+    fn register(&mut self, waker: AtomicTask) {
         match self {
             &mut WakerWrapper::Registered(ref _dont_care) => (),
             &mut WakerWrapper::NotRegistered => {
-                let w = AtomicWaker::new();
-                w.register(waker);
-                mem::replace(self, WakerWrapper::Registered(w));
+                mem::replace(self, WakerWrapper::Registered(waker));
             },
         }
     }
 
     fn wake(&self) {
         match self {
-            &WakerWrapper::Registered(ref w) => w.wake(),
+            &WakerWrapper::Registered(ref w) => w.notify(),
             &WakerWrapper::NotRegistered => (),
         };
     }
@@ -221,13 +220,15 @@ impl<V, E> Future for CompletableFuture<V, E> {
     type Item = V;
     type Error = E;
     
-    fn poll(&mut self, ctx: &mut Context) -> Result<Async<Self::Item>, Self::Error> {
+    fn poll(&mut self) -> Result<Async<Self::Item>, Self::Error> {
         let mut signal = self.internal.lock().unwrap();
-        signal.waker.register(ctx.waker());
+        let t = AtomicTask::new();
+        t.register();
+        signal.waker.register(t);
 
         let state = &mut signal.state;
         match state {
-            &mut FutureState::Pending => Ok(Async::Pending),
+            &mut FutureState::Pending => Ok(Async::NotReady),
             &mut FutureState::Taken => panic!("bug: the value has been taken, yet I'm still polled again"),
             &mut FutureState::Completed(_) => Ok(Async::Ready(state.unwrap_val())),
             &mut FutureState::Errored(_) => Err(state.unwrap_err()),

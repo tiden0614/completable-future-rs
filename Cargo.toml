@@ -1,6 +1,6 @@
 [package]
 name = "completable_future"
-version = "0.2.0"
+version = "0.1.0"
 authors = ["tiden <tiden111@gmail.com>"]
 license = "MIT/Apache-2.0"
 readme = "README.md"
@@ -10,4 +10,7 @@ CompletableFuture for Rust
 """
 
 [dependencies]
-futures = "0.2.1"
+futures = "^0.1.16"
+
+[dev-dependencies]
+tokio = "*"

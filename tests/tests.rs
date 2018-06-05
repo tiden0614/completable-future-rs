@@ -1,7 +1,9 @@
 extern crate futures;
 extern crate completable_future;
+extern crate tokio;
 
-use futures::executor::block_on;
+use futures::future::Future;
+use tokio::executor::current_thread::block_on_all;
 use std::thread::spawn;
 use std::sync::{Arc, Mutex};
 use completable_future::CompletableFuture;
@@ -18,6 +20,12 @@ fn errored(err: &str) -> TestFuture {
 
 fn new() -> TestFuture {
 	CompletableFuture::new()
+}
+
+fn block_on<F>(fut: F) -> Result<F::Item, F::Error>
+where F: Future
+{
+	block_on_all(fut)
 }
 
 #[test]
