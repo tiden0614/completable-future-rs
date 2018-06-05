@@ -19,10 +19,11 @@ so there's overhead for using it.
 # Example
 ```
 extern crate futures;
+extern crate tokio;
 extern crate completable_future;
 
 use futures::prelude::*;
-use futures::executor::block_on;
+use tokio::executor::current_thread::block_on_all;
 use std::thread::spawn;
 use std::thread::sleep;
 use std::time::Duration;
@@ -38,7 +39,7 @@ let fut2 = fut1.and_then(|s| {
 
 let j = spawn(move || {
     println!("waiter thread: I'm going to block on fut2");
-    let ret = block_on(fut2).unwrap();
+    let ret = block_on_all(fut2).unwrap();
     println!("waiter thread: fut2 completed with message -- {}", ret);
 });
 
