@@ -17,7 +17,7 @@ The CompletableFuture uses Arc and Mutex to synchronize poll and completion,
 so there's overhead for using it.
 
 # Example
-'''
+```
 extern crate futures;
 extern crate completable_future;
 
@@ -50,4 +50,4 @@ spawn(move || {
 });
 
 j.join().unwrap();
-'''
+```

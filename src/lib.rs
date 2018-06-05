@@ -17,7 +17,7 @@
 //! so there's overhead for using it.
 //!
 //! # Example
-//! '''
+//! ```
 //! extern crate futures;
 //! extern crate completable_future;
 //! 
@@ -26,31 +26,34 @@
 //! use std::thread::spawn;
 //! use std::thread::sleep;
 //! use std::time::Duration;
+//! use completable_future::CompletableFuture;
 //! 
-//! let fut1 = CompletableFuture::<String, ()>::new();
-//! // we will give the signal to some worker for it to complete
-//! let mut signal = fut1.signal(); 
-//! let fut2 = fut1.and_then(|s| {
-//!     // this will come from whoever completes the future
-//!     println!("in fut2: {}", s);
-//!     Ok("this comes from fut2".to_string())
-//! });
-//! 
-//! let j = spawn(move || {
-//!     println!("waiter thread: I'm going to block on fut2");
-//!     let ret = block_on(fut2).unwrap();
-//!     println!("waiter thread: fut2 completed with message -- {}", ret);
-//! });
-//! 
-//! spawn(move || {
-//!     println!("worker thread: going to block for 1000 ms");
-//!     sleep(Duration::from_millis(1000));
-//!     signal.complete("this comes from fut1".to_string());
-//!     println!("worker thread: completed fut1");
-//! });
-//! 
-//! j.join().unwrap();
-//! '''
+//! fn main() {
+//!     let fut1 = CompletableFuture::<String, ()>::new();
+//!     // we will give the signal to some worker for it to complete
+//!     let mut signal = fut1.signal(); 
+//!     let fut2 = fut1.and_then(|s| {
+//!         // this will come from whoever completes the future
+//!         println!("in fut2: {}", s);
+//!         Ok("this comes from fut2".to_string())
+//!     });
+//!     
+//!     let j = spawn(move || {
+//!         println!("waiter thread: I'm going to block on fut2");
+//!         let ret = block_on(fut2).unwrap();
+//!         println!("waiter thread: fut2 completed with message -- {}", ret);
+//!     });
+//!     
+//!     spawn(move || {
+//!         println!("worker thread: going to block for 1000 ms");
+//!         sleep(Duration::from_millis(1000));
+//!         signal.complete("this comes from fut1".to_string());
+//!         println!("worker thread: completed fut1");
+//!     });
+//!     
+//!     j.join().unwrap();
+//! }
+//! ```
 
 extern crate futures;
  
