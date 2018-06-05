@@ -13,4 +13,4 @@ CompletableFuture for Rust
 futures = "^0.1.16"
 
 [dev-dependencies]
-tokio = "*"
+tokio = "^0.1.6"
